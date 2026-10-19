@@ -93,7 +93,7 @@ export default function App() {
   }, [phase, downloaded, editCount]);
 
   // ---------------------------------------------------------------- actions
-  const openFile = useCallback(async (file: File) => {
+  const openFile = useCallback(async (file: File): Promise<LoadedDocument | null> => {
     setNotice(null);
     if (!kindOf(file.name)) {
       const legacy = /\.(doc|ppt)$/i.test(file.name);
@@ -104,23 +104,46 @@ export default function App() {
           ? "Older .doc and .ppt files need to be saved as .docx or .pptx first (File → Save As in Office)."
           : "Choose a Word (.docx) or PowerPoint (.pptx) file.",
       });
-      return;
+      return null;
     }
     setLoading(true);
     try {
       const loaded = await loadDocument(file);
       if (!loaded.segments.length) {
         setNotice({ tone: "warning", title: "No text to translate", body: "This file doesn't contain any text we can translate." });
-        return;
+        return null;
       }
       setDoc(loaded);
       setPhase("configure");
+      return loaded;
     } catch (err) {
       setNotice({ tone: "error", title: "This file couldn't be opened", body: (err as Error).message });
+      return null;
     } finally {
       setLoading(false);
     }
   }, []);
+
+  /** One click from the landing page to the review screen, for people without a file handy. */
+  const trySample = async (fileName: string) => {
+    setLoading(true);
+    try {
+      const blob = await fetch(`./samples/${encodeURIComponent(fileName)}`).then((r) => {
+        if (!r.ok) throw new Error();
+        return r.blob();
+      });
+      const loaded = await openFile(new File([blob], fileName));
+      if (!loaded) return;
+      const target = to && to !== "en" ? to : "zh-cn";
+      setFrom(AUTO);
+      setTo(target);
+      await start(loaded, AUTO, target);
+    } catch {
+      setNotice({ tone: "error", title: "Couldn't load the sample file", body: "Check your connection and try again." });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const reset = () => {
     const unsaved = phase === "review" && (editCount > 0 || !downloaded);
@@ -132,20 +155,24 @@ export default function App() {
     setPhase("upload");
   };
 
-  const start = async () => {
-    if (!doc || !to) return;
+  // Arguments let the sample flow start before React has applied the new state.
+  const start = async (d = doc, source = from, target = to) => {
+    if (!d || !target) return;
+    const texts = uniqueTexts(d).map((i) => i.key);
     const controller = new AbortController();
     abort.current = controller;
     setNotice(null);
     setEdits({});
     setDownloaded(false);
-    setProgress({ done: 0, total: items.length });
+    setProgress({ done: 0, total: texts.length });
     setPhase("translating");
     try {
-      const result = await translateAll(
-        items.map((i) => i.key),
-        { from, to, signal: controller.signal, onProgress: setProgress },
-      );
+      const result = await translateAll(texts, {
+        from: source,
+        to: target,
+        signal: controller.signal,
+        onProgress: setProgress,
+      });
       setMachine(result.translations);
       setFailed(new Set(result.failed));
       setDetected(result.detectedSource);
@@ -207,6 +234,15 @@ export default function App() {
             </section>
             {notice && <Banner notice={notice} onDismiss={() => setNotice(null)} />}
             <DropZone onFile={openFile} loading={loading} />
+            <div className="samples">
+              <span className="muted">No file handy? Try a sample:</span>
+              <button type="button" className="btn sm" disabled={loading} onClick={() => trySample("Team Onboarding.pptx")}>
+                <span className="badge-dot pptx" aria-hidden /> Slide deck
+              </button>
+              <button type="button" className="btn sm" disabled={loading} onClick={() => trySample("Hybrid Work Policy.docx")}>
+                <span className="badge-dot docx" aria-hidden /> Word document
+              </button>
+            </div>
             <HowItWorks />
           </div>
         )}
@@ -248,7 +284,7 @@ export default function App() {
                 <Progress done={progress.done} total={progress.total} target={languageName(to!)} onCancel={() => abort.current?.abort()} />
               ) : (
                 <>
-                  <button type="button" className="btn primary lg block" disabled={!!missing} onClick={start}>
+                  <button type="button" className="btn primary lg block" disabled={!!missing} onClick={() => start()}>
                     Translate {doc.kind === "docx" ? "document" : "presentation"}
                   </button>
                   <p className="hint">

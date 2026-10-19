@@ -333,6 +333,26 @@ main {
 .faint {
   color: var(--text-faint);
 }
+.samples {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 14px;
+}
+.badge-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.badge-dot.docx {
+  background: var(--docx);
+}
+.badge-dot.pptx {
+  background: var(--pptx);
+}
 .file-types {
   margin-top: 8px;
   display: flex;
