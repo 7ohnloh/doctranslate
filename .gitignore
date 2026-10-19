@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+build/
+dist/
+*.spec
+.DS_Store
+
+# Web app
+node_modules/
+web/dist/
+web/test-output/
+.claude/
