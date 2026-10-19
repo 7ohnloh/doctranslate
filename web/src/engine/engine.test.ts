@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { File as NodeFile } from "node:buffer";
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildDocumentBytes, loadDocument, outputName, uniqueTexts } from "./ooxml";
@@ -29,7 +29,10 @@ async function translateFile(name: string, calls: string[] = []) {
   });
   const bytes = await buildDocumentBytes(doc, result.translations);
   const out = new NodeFile([bytes], outputName(name, "ja")) as unknown as File;
-  writeFileSync(resolve(__dirname, "../../test-output", out.name), bytes);
+  // Saved so the output can be opened in Office by hand; the folder is git-ignored.
+  const outDir = resolve(__dirname, "../../test-output");
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(resolve(outDir, out.name), bytes);
   return { doc, result, reloaded: await loadDocument(out) };
 }
 
