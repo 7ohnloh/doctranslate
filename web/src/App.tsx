@@ -20,8 +20,7 @@ import { buildDocument, kindOf, loadDocument, outputName, uniqueTexts } from "./
 import type { LoadedDocument } from "./engine/ooxml";
 import { translateAll } from "./engine/translate";
 
-// Update after creating the GitHub repo.
-const REPO_URL = "https://github.com/your-username/doctranslate";
+const REPO_URL = "https://github.com/7ohnloh/doctranslate";
 
 type Phase = "upload" | "configure" | "translating" | "review";
 type Notice = { tone: "error" | "warning" | "success"; title: string; body?: string } | null;

@@ -4,7 +4,7 @@
 
 DocTranslate started as a small desktop tool I built during my internship. This repo shows how it grew into a privacy-first web app: same core idea, rethought for anyone with a browser.
 
-**[Try it →](https://your-username.github.io/doctranslate/)** <!-- update after deploying -->
+**[Try it live →](https://7ohnloh.github.io/doctranslate/)**: no file needed, use the built-in sample.
 
 ![Upload screen](docs/screenshots/web-upload.jpg)
 
